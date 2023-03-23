@@ -1,8 +1,10 @@
+import { ethers } from 'hardhat';
+import { DeployFunction } from 'hardhat-deploy/dist/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DEVELOPMENT_CHAINS, networkConfig } from '../helper-hardhat-config';
 import verify from '../utils/verify';
 
-const deploy = async (hre: HardhatRuntimeEnvironment) => {
+const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { deployments, network, getNamedAccounts } = hre;
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
@@ -21,12 +23,22 @@ const deploy = async (hre: HardhatRuntimeEnvironment) => {
         waitConfirmations: networkConfig[network.name].blockConfirmation || 0,
     });
 
+    await transferOwnership(approver.address, safeAddress!);
+
     if (
         !DEVELOPMENT_CHAINS.includes(network.name) &&
         process.env.ETHERSCAN_API_KEY
     ) {
         await verify(approver.address, args);
     }
+};
+
+const transferOwnership = async (approverAddress: string, newOnwer: string) => {
+    const approver = await ethers.getContractAt('Approver', approverAddress);
+    const tx = await approver.transferOwnership(newOnwer);
+    tx.wait(1);
+
+    console.log('Ownership transfered to the safe contract.');
 };
 
 export default deploy;
