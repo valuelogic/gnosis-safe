@@ -6,7 +6,7 @@ import 'hardhat-deploy';
 import { HardhatUserConfig } from 'hardhat/config';
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || '';
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || '';
+const GOERLI_RPC_URL = process.env.GOERLI_RPC_URL || '';
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
 
 const config: HardhatUserConfig = {
@@ -28,10 +28,13 @@ const config: HardhatUserConfig = {
             chainId: 31337,
             allowUnlimitedContractSize: true,
         },
-        sepolia: {
-            url: SEPOLIA_RPC_URL,
-            accounts: [PRIVATE_KEY],
-            chainId: 11155111,
+        goerli: {
+            url: GOERLI_RPC_URL,
+            accounts: [
+                PRIVATE_KEY,
+                'ec5775f230fd186ac5a14e01003ddf07ce3b91225e2f9aa5693018cb50a6a687',
+            ],
+            chainId: 5,
         },
     },
     namedAccounts: {

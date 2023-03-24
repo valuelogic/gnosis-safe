@@ -5,10 +5,8 @@ export const DEVELOPMENT_CHAINS = ['hardhat', 'localhost'];
 
 export interface networkConfigItem {
     chainId: number;
-    safeAddress?: string;
-    whitelist?: string[];
-    blacklist?: string[];
-    transationValueLimit?: BigNumber;
+    whitelist: string[];
+    transationValueLimit: BigNumber;
     blockConfirmation?: number;
 }
 
@@ -19,21 +17,18 @@ export interface networkConfigInfo {
 export const networkConfig: networkConfigInfo = {
     hardhat: {
         chainId: 31337,
-        safeAddress: '0x1B55c54E870cb58d013B4AE39E276894ce1e0EdD',
         whitelist: [],
-        transationValueLimit: ethers.utils.parseEther('0.001'),
+        transationValueLimit: ethers.utils.parseEther('1'),
     },
     localhost: {
         chainId: 31337,
-        safeAddress: '0x1B55c54E870cb58d013B4AE39E276894ce1e0EdD',
         whitelist: [],
-        transationValueLimit: ethers.utils.parseEther('0.001'),
+        transationValueLimit: ethers.utils.parseEther('1'),
     },
-    sepolia: {
+    goerli: {
         chainId: 5,
-        safeAddress: '0x1B55c54E870cb58d013B4AE39E276894ce1e0EdD',
         whitelist: [],
-        transationValueLimit: ethers.utils.parseEther('0.001'),
+        transationValueLimit: ethers.utils.parseEther('1'),
         blockConfirmation: 3,
     },
 };

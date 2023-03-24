@@ -9,7 +9,12 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    const safeAddress = networkConfig[network.name].safeAddress;
+    if(!process.env.SAFE) {
+        console.log("Please define SAFE address in env. file.")
+        return;
+    }
+
+    const safeAddress = process.env.SAFE;
     const transationValueLimit =
         networkConfig[network.name].transationValueLimit;
     const whitelist = networkConfig[network.name].whitelist;
@@ -36,7 +41,7 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 const transferOwnership = async (approverAddress: string, newOnwer: string) => {
     const approver = await ethers.getContractAt('Approver', approverAddress);
     const tx = await approver.transferOwnership(newOnwer);
-    tx.wait(1);
+    await tx.wait(1);
 
     console.log('Ownership transfered to the safe contract.');
 };
