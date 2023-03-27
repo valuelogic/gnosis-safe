@@ -5,11 +5,15 @@ import { ethers } from 'hardhat';
 import { IERC165 } from '../typechain-types';
 import { Approver, ISafe } from '../typechain-types/contracts';
 
+const ZERO_BYTES = '0x'
+
 describe('Approver', () => {
     const deploy = async () => {
         const safeMock: FakeContract<ISafe> = await smock.fake('ISafe');
         const transationValueLimit = ethers.utils.parseEther('0.1');
         const whitelistedProtocol = ethers.Wallet.createRandom().address;
+        const notWhitelistedProtocol = ethers.Wallet.createRandom().address;
+
         const [deployer, hacker] = await ethers.getSigners();
         const Approver = await ethers.getContractFactory('Approver');
         const approver: Approver = await Approver.deploy(
@@ -25,6 +29,7 @@ describe('Approver', () => {
             safeMock,
             transationValueLimit,
             whitelistedProtocol,
+            notWhitelistedProtocol,
             deployer,
             hacker,
             nft,
@@ -37,13 +42,13 @@ describe('Approver', () => {
             safeMock,
             transationValueLimit,
             whitelistedProtocol,
+            notWhitelistedProtocol,
         } = await deploy();
 
         expect(await approver.getSafe()).to.be.eq(safeMock.address);
         expect(await approver.getLimit()).to.be.eq(transationValueLimit);
         expect(await approver.isWhitelisted(whitelistedProtocol)).to.be.true;
 
-        const notWhitelistedProtocol = ethers.Wallet.createRandom().address;
         expect(await approver.isWhitelisted(notWhitelistedProtocol)).to.be
             .false;
     });
@@ -114,13 +119,13 @@ describe('Approver', () => {
                 .approve(
                     hacker.address,
                     ethers.utils.parseEther('1'),
-                    '0x',
+                    ZERO_BYTES,
                     0,
                     0,
                     0,
                     0,
-                    '0x0000000000000000000000000000000000000000',
-                    '0x0000000000000000000000000000000000000000',
+                    ethers.constants.AddressZero,
+                    ethers.constants.AddressZero,
                     1
                 )
         )
@@ -134,7 +139,6 @@ describe('Approver', () => {
     it('Should revert when nft related transaction', async () => {
         const { approver, safeMock, nft } = await deploy();
         const data = '0x42966c68';
-        const notWhitelistedProtocol = ethers.Wallet.createRandom().address;
 
         safeMock.isOwner.returns(true);
 
@@ -147,15 +151,16 @@ describe('Approver', () => {
                 0,
                 0,
                 0,
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 1
             )
-        ).to.revertedWithCustomError(
-            approver,
-            'Approver__NftTransactionNotAllowed'
-        );
-        //  .withArgs(nft.address);
+        )
+            .to.revertedWithCustomError(
+                approver,
+                'Approver__NftTransactionNotAllowed'
+            )
+            .withArgs(nft.address);
     });
 
     it('Should approve when protocol whitelisted', async () => {
@@ -178,8 +183,8 @@ describe('Approver', () => {
                 0,
                 0,
                 0,
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 1
             )
         )
@@ -188,9 +193,8 @@ describe('Approver', () => {
     });
 
     it('Should revert when protocol not whitelisted', async () => {
-        const { approver, safeMock } = await deploy();
+        const { approver, safeMock, notWhitelistedProtocol } = await deploy();
         const data = '0x42966c68';
-        const notWhitelistedProtocol = ethers.Wallet.createRandom().address;
 
         safeMock.isOwner.returns(true);
 
@@ -203,8 +207,8 @@ describe('Approver', () => {
                 0,
                 0,
                 0,
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 1
             )
         )
@@ -221,7 +225,7 @@ describe('Approver', () => {
         const txHash = getTransationHash(
             deployer.address,
             transationValueLimit,
-            '0x'
+            ZERO_BYTES
         );
         safeMock.getTransactionHash.returns(txHash);
         safeMock.isOwner.returns(true);
@@ -230,13 +234,13 @@ describe('Approver', () => {
             approver.approve(
                 deployer.address,
                 0,
-                '0x',
+                ZERO_BYTES,
                 0,
                 0,
                 0,
                 0,
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 1
             )
         )
@@ -254,13 +258,13 @@ describe('Approver', () => {
             approver.approve(
                 deployer.address,
                 transationValue,
-                '0x',
+                ZERO_BYTES,
                 0,
                 0,
                 0,
                 0,
-                '0x0000000000000000000000000000000000000000',
-                '0x0000000000000000000000000000000000000000',
+                ethers.constants.AddressZero,
+                ethers.constants.AddressZero,
                 1
             )
         )
@@ -268,7 +272,7 @@ describe('Approver', () => {
                 approver,
                 'Approver__TransationNotAllowed'
             )
-            .withArgs(deployer.address, transationValue, '0x');
+            .withArgs(deployer.address, transationValue, ZERO_BYTES);
     });
 });
 
@@ -281,8 +285,8 @@ const getTransationHash = (to: string, value: BigNumber, data: string) => {
         safeTxGas: 0,
         baseGas: 0,
         gasPrice: 0,
-        gasToken: '0x0000000000000000000000000000000000000000',
-        refundReceiver: '0x0000000000000000000000000000000000000000',
+        gasToken: ethers.constants.AddressZero,
+        refundReceiver: ethers.constants.AddressZero,
         nonce: 1,
     };
 
