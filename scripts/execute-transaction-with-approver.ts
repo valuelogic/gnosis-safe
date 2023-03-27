@@ -77,7 +77,7 @@ const main = async () => {
         console.log('Approver has approved the transaction');
 
         console.log(
-            'Transaction execution has been started. If there is not enought signatures the transaction will fail.'
+            'Transaction execution has been started. If there is not enought signatures the transaction will revert.'
         );
 
         try {

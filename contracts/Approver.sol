@@ -2,11 +2,12 @@
 pragma solidity 0.8.19;
 
 import './ISafe.sol';
-import "@openzeppelin/contracts/access/Ownable.sol";
+import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/interfaces/IERC165.sol';
 
 error Approver__NotTheSafeOwner(address who);
-error Approver_NotSafe(address who);
-error Approver_TransationNotAllowed(address to, uint256 value, bytes data);
+error Approver__NftTransactionNotAllowed(address to);
+error Approver__TransationNotAllowed(address to, uint256 value, bytes data);
 
 contract Approver is Ownable {
     event TransationApproved(bytes32 txHash);
@@ -45,6 +46,10 @@ contract Approver is Ownable {
             revert Approver__NotTheSafeOwner(msg.sender);
         }
 
+        if (_data.length > 0 && isNFT(_to)) {
+            revert Approver__NftTransactionNotAllowed(_to);
+        }
+
         if ((_data.length == 0 && _value <= s_limit) || s_whitelist[_to]) {
             bytes32 txHash = i_safe.getTransactionHash(
                 _to,
@@ -62,7 +67,7 @@ contract Approver is Ownable {
             i_safe.approveHash(txHash);
             emit TransationApproved(txHash);
         } else {
-            revert Approver_TransationNotAllowed(_to, _value, _data);
+            revert Approver__TransationNotAllowed(_to, _value, _data);
         }
     }
 
@@ -91,5 +96,18 @@ contract Approver is Ownable {
 
     function getLimit() external view returns (uint256) {
         return s_limit;
+    }
+
+    function isNFT(address _target) private view returns (bool) {
+        if (_target.code.length == 0) {
+            return false;
+        }
+        try IERC165(_target).supportsInterface(0x80ac58cd) returns (
+            bool isSupported
+        ) {
+            return isSupported;
+        } catch {
+            return false;
+        }
     }
 }

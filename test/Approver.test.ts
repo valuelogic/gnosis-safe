@@ -2,6 +2,7 @@ import { FakeContract, smock } from '@defi-wonderland/smock';
 import { BigNumber } from '@ethersproject/bignumber';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
+import { IERC165 } from '../typechain-types';
 import { Approver, ISafe } from '../typechain-types/contracts';
 
 describe('Approver', () => {
@@ -16,6 +17,8 @@ describe('Approver', () => {
             transationValueLimit,
             [whitelistedProtocol]
         );
+        const nft: FakeContract<IERC165> = await smock.fake('IERC165');
+        nft.supportsInterface.returns(true);
 
         return {
             approver,
@@ -24,6 +27,7 @@ describe('Approver', () => {
             whitelistedProtocol,
             deployer,
             hacker,
+            nft,
         };
     };
 
@@ -127,10 +131,41 @@ describe('Approver', () => {
             .withArgs(hacker.address);
     });
 
+    it('Should revert when nft related transaction', async () => {
+        const { approver, safeMock, nft } = await deploy();
+        const data = '0x42966c68';
+        const notWhitelistedProtocol = ethers.Wallet.createRandom().address;
+
+        safeMock.isOwner.returns(true);
+
+        await expect(
+            approver.approve(
+                nft.address,
+                0,
+                data,
+                0,
+                0,
+                0,
+                0,
+                '0x0000000000000000000000000000000000000000',
+                '0x0000000000000000000000000000000000000000',
+                1
+            )
+        ).to.revertedWithCustomError(
+            approver,
+            'Approver__NftTransactionNotAllowed'
+        );
+        //  .withArgs(nft.address);
+    });
+
     it('Should approve when protocol whitelisted', async () => {
         const { approver, safeMock, whitelistedProtocol } = await deploy();
         const data = '0x42966c68';
-        const txHash = getTransationHash(whitelistedProtocol, 0, data);
+        const txHash = getTransationHash(
+            whitelistedProtocol,
+            BigNumber.from(0),
+            data
+        );
         safeMock.getTransactionHash.returns(txHash);
         safeMock.isOwner.returns(true);
 
@@ -175,7 +210,7 @@ describe('Approver', () => {
         )
             .to.revertedWithCustomError(
                 approver,
-                'Approver_TransationNotAllowed'
+                'Approver__TransationNotAllowed'
             )
             .withArgs(notWhitelistedProtocol, 0, data);
     });
@@ -231,7 +266,7 @@ describe('Approver', () => {
         )
             .to.revertedWithCustomError(
                 approver,
-                'Approver_TransationNotAllowed'
+                'Approver__TransationNotAllowed'
             )
             .withArgs(deployer.address, transationValue, '0x');
     });

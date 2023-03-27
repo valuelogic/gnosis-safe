@@ -61,7 +61,7 @@ const main = async () => {
             tx = await safeSdk.signTransaction(tx);
         }
 
-        console.log("Singatures tresholded has been reached.")
+        console.log("Singatures treshold has been reached.")
 
         console.log('Transaction execution has been started.');
 
